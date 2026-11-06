@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Winter Garden Sales Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #fbf8f2; --surface: #ffffff; --line: #eaddc8; --line-strong: #cfbf9f;
+  --ink: #2c2c2c; --muted: #6b6459; --gold: #d4af37; --gold-ink: #7a5f12; --gold-soft: #f6eed3;
+  --good: #1f6b4a; --good-soft: #dff0e6; --bad: #a33b3b; --bad-soft: #f7e3e0;
+  --radius: 10px;
+  --sans: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --serif: 'Playfair Display', Georgia, serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.45 var(--sans); }
+h1, h2, h3, p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+
+.top { background: var(--ink); color: #fff; padding: 12px 16px 0; position: sticky; top: 0; z-index: 5; }
+.top-in { max-width: 1120px; margin: 0 auto; }
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { font: 600 20px/1.2 var(--serif); }
+.sync { font-size: 12px; color: #d8d2c6; text-align: right; display: flex; gap: 10px; align-items: center; }
+.sync.bad { color: #ffc9c0; }
+.linkish { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font-size: 12px; }
+.tabs { display: flex; gap: 2px; margin-top: 10px; overflow-x: auto; }
+.tab { flex: 0 0 auto; background: none; border: 0; border-bottom: 3px solid transparent; color: #d8d2c6; padding: 8px 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.tab[aria-selected="true"] { color: #fff; border-bottom-color: var(--gold); }
+.demo { background: var(--gold-soft); color: var(--gold-ink); text-align: center; padding: 6px 16px; font-size: 13px; font-weight: 600; }
+
+main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; }
+.head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.head h1 { font: 600 24px/1.2 var(--serif); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 8px; padding: 9px 14px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+.btn.danger { color: var(--bad); border-color: var(--bad); }
+.btn:disabled { opacity: .55; cursor: default; }
+:focus-visible { outline: 2px solid var(--gold-ink); outline-offset: 2px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.filters input, .filters select { background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.filters input { flex: 1 1 200px; }
+.filters select { flex: 0 1 170px; }
+.count { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #fdfaf3; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.name { background: none; border: 0; padding: 0; font-weight: 600; text-align: left; cursor: pointer; }
+.sub { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.sub a { color: var(--gold-ink); }
+.pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--gold-soft); color: var(--gold-ink); white-space: nowrap; }
+.pill.won { background: var(--good-soft); color: var(--good); }
+.pill.lost { background: #eeeae3; color: var(--muted); }
+.late { color: var(--bad); font-weight: 600; }
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat { padding: 14px 16px; }
+.stat .label { color: var(--muted); font-size: 13px; }
+.stat .value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.stat .note { color: var(--muted); font-size: 13px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.block h2 { font-size: 15px; font-weight: 700; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.line { display: flex; justify-content: space-between; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+.line:last-child { border-bottom: 0; }
+button.line { width: 100%; background: none; border-width: 0 0 1px; border-color: var(--line); border-style: solid; text-align: left; cursor: pointer; }
+button.line:hover { background: #fdfaf3; }
+.line b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.warn { background: var(--gold-soft); color: var(--gold-ink); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-size: 14px; }
+
+dialog { border: 0; border-radius: 14px; padding: 0; width: min(620px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); color: var(--ink); }
+dialog::backdrop { background: rgba(30, 26, 20, .5); }
+.dlg-head { position: sticky; top: 0; background: var(--surface); padding: 16px 20px 12px; border-bottom: 1px solid var(--line); z-index: 1; display: flex; justify-content: space-between; gap: 12px; align-items: start; }
+.dlg-head h2 { font: 600 20px/1.25 var(--serif); }
+.x { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; padding: 2px 6px; }
+.dlg-body { padding: 16px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label, .field .lbl { font-size: 13px; font-weight: 600; }
+.field input, .field select, .field textarea { border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 10px; background: var(--surface); width: 100%; min-width: 0; }
+.field textarea { min-height: 84px; resize: vertical; }
+.check { flex-direction: row; align-items: center; gap: 8px; }
+.check input { width: auto; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.audit { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); }
+.dlg-foot { position: sticky; bottom: 0; background: var(--surface); padding: 12px 20px 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.dlg-foot .spacer { flex: 1; }
+.err { color: var(--bad); font-size: 13.5px; font-weight: 600; flex-basis: 100%; }
+.price-row { display: grid; grid-template-columns: 1fr 90px 76px 34px; gap: 6px; margin-bottom: 6px; align-items: center; }
+.price-row.tier { grid-template-columns: 1fr 90px 34px; }
+.price-row input { border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px; width: 100%; min-width: 0; }
+.price-cols { font-size: 12px; color: var(--muted); }
+
+.gate { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: grid; place-items: center; padding: 16px; overflow: auto; }
+.gate form { width: min(380px, 100%); display: grid; gap: 12px; padding: 24px; }
+.gate h1 { font: 600 26px/1.2 var(--serif); }
+
+@media (max-width: 720px) {
+  .dlg-body { grid-template-columns: 1fr; }
+  .dlg-foot .spacer { display: none; }
+  .dlg-foot .btn { flex: 1 1 auto; }
+  thead { display: none; }
+  table, tbody, tr, td { display: block; width: 100%; }
+  tbody tr { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  tbody tr:last-child { border-bottom: 0; }
+  td { border: 0; padding: 2px 0; display: flex; justify-content: space-between; gap: 12px; text-align: right; }
+  td.num { text-align: right; }
+  td::before { content: attr(data-label); color: var(--muted); font-size: 13px; text-align: left; flex: 0 0 auto; }
+  td.lead { display: block; text-align: left; padding-bottom: 6px; }
+  td.lead::before { content: none; }
+  td.blank { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate" hidden>
+  <form class="panel" id="gateForm" autocomplete="on">
+    <h1>Winter Garden Sales Desk</h1>
+    <p class="sub" id="gateNote">Enter your name and the team passcode. You'll only need to do this once on this device.</p>
+    <div class="field"><label for="gateName">Your name</label><input id="gateName" name="name" required maxlength="80" autocomplete="name"></div>
+    <div class="field"><label for="gatePass">Team passcode</label><input id="gatePass" type="password" required autocomplete="current-password"></div>
+    <p class="err" id="gateErr" role="alert" hidden></p>
+    <button class="btn primary" id="gateBtn">Open the Sales Desk</button>
+  </form>
+</div>
+
+<header class="top">
+  <div class="top-in">
+    <div class="top-row">
+      <div class="brand" id="brand">Sales Desk</div>
+      <div class="sync" id="syncWrap"><span id="sync" role="status"></span><button class="linkish" id="whoBtn" type="button"></button></div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-view="overview">Overview</button>
+      <button class="tab" role="tab" data-view="vendors">Vendors</button>
+      <button class="tab" role="tab" data-view="sponsors">Sponsors</button>
+      <button class="tab" role="tab" data-view="appointments">Appointments</button>
+    </nav>
+  </div>
+</header>
+<div class="demo" id="demo" hidden>Demo mode: sample data only, nothing is saved.</div>
+<main id="main"></main>
+<dialog id="dlg"></dialog>
+
+<script>
+'use strict';
+/* Paste the Web app URL between the quotes. Leave empty for demo mode. */
+const API_URL = '';
+
+const POLL_MS = 20000;
+const DEMO = !API_URL;
+
+const VENDOR_STATUS = ['Lead', 'Contacted', 'Interested', 'Reserved', 'Deposit paid', 'Paid in full', 'Declined'];
+const VENDOR_SOLD = ['Reserved', 'Deposit paid', 'Paid in full'];
+const SPONSOR_STATUS = ['Prospect', 'Contacted', 'Meeting set', 'Proposal sent', 'Negotiating', 'Confirmed', 'Paid', 'Declined'];
+const SPONSOR_SOLD = ['Confirmed', 'Paid'];
+const APPT_STATUS = ['Scheduled', 'Done', 'Cancelled', 'No-show'];
+const CLOSED = ['Paid in full', 'Paid', 'Declined'];
+const CATEGORIES = ['Food & drink', 'Fashion', 'Crafts & art', 'Beauty & wellness', 'Home', 'Kids', 'Services', 'Other'];
+
+const COLUMNS = {
+  vendors: ['id', 'business', 'contact', 'phone', 'email', 'category', 'boothType', 'boothNumber', 'status', 'owner', 'price', 'earlyBird', 'paid', 'followUp', 'notes', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'],
+  sponsors: ['id', 'company', 'contact', 'phone', 'email', 'tier', 'status', 'owner', 'amount', 'paid', 'followUp', 'notes', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'],
+  appointments: ['id', 'date', 'time', 'with', 'leadType', 'type', 'location', 'owner', 'status', 'notes', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'],
+};
+const SINGULAR = { vendors: 'vendor', sponsors: 'sponsor', appointments: 'appointment' };
+const NAME_KEY = { vendors: 'business', sponsors: 'company', appointments: 'with' };
+
+let S = { vendors: [], sponsors: [], appointments: [], config: {} };
+let lastJson = '';
+let view = 'overview';
+const filters = { vendors: { q: '', status: '', owner: '' }, sponsors: { q: '', status: '', owner: '' }, appointments: { q: '', status: 'upcoming', owner: '' } };
+let me = store('sd.name') || '';
+let pass = store('sd.pass') || '';
+let writes = 0, loading = false, reload = false, started = false, timer = 0;
+
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const num = v => { const n = Number(v); return isFinite(n) ? n : 0; };
+const cfg = () => S.config || {};
+const team = () => cfg().team || [];
+const money = n => `${num(n).toLocaleString('en', { maximumFractionDigits: 3 })} ${cfg().currency || 'OMR'}`;
+const newId = () => (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : Date.now().toString(36) + Math.random().toString(36).slice(2)).slice(0, 16);
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function niceDate(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return iso || '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+function store(key, value) {
+  try {
+    if (value === undefined) return localStorage.getItem(key);
+    if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+  } catch (e) { /* private window: the page still works for this visit */ }
+  return null;
+}
+
+/* ---------- Talking to the Sheet ---------- */
+
+class ApiError extends Error {
+  constructor(code, detail) { super(detail || code); this.code = code; }
+}
+
+async function api(action, payload) {
+  if (DEMO) return demoApi(action, payload || {});
+  const ctl = new AbortController();
+  const stop = setTimeout(() => ctl.abort(), 30000);
+  let res, text;
+  try {
+    // text/plain keeps this a simple request, which Apps Script can answer across sites.
+    res = await fetch(API_URL, {
+      method: 'POST', redirect: 'follow', signal: ctl.signal,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, passcode: pass, user: me, ...payload }),
+    });
+    text = await res.text();
+  } catch (e) {
+    throw new ApiError('network');
+  } finally {
+    clearTimeout(stop);
+  }
+  let out;
+  try { out = JSON.parse(text); } catch (e) { throw new ApiError('network'); }
+  if (!out.ok) throw new ApiError(out.error || 'server', out.message);
+  return out;
+}
+
+function errorText(e) {
+  if (e.code === 'network') return "Couldn't reach the Sheet. Check your connection and try again.";
+  if (e.code === 'not-configured') return 'The passcode in Apps Script is still CHANGE-THIS. Set it and redeploy.';
+  if (e.code === 'passcode') return "That passcode didn't work.";
+  return e.message || 'Something went wrong.';
+}
+
+async function refresh() {
+  if (loading) { reload = true; return; }
+  loading = true;
+  const startedAt = writes;
+  try {
+    const out = await api('load');
+    // A save finished during this read, so the read may be out of date.
+    if (startedAt === writes) apply(out.data); else reload = true;
+    setSync(true);
+  } catch (e) {
+    if (e.code === 'passcode') { askPasscode('The passcode has changed. Enter the new one to carry on.'); }
+    else if (e.code === 'not-configured') { askPasscode(errorText(e)); }
+    else setSync(false, e);
+  } finally {
+    loading = false;
+    if (reload) { reload = false; refresh(); }
+  }
+}
+
+function apply(data) {
+  const json = JSON.stringify(data);
+  if (json === lastJson) return;
+  lastJson = json;
+  S = data;
+  render();
+}
+
+function setSync(ok, e) {
+  const el = $('sync');
+  $('syncWrap').classList.toggle('bad', !ok);
+  if (ok) {
+    el.textContent = DEMO ? 'Demo' : `Up to date ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  } else {
+    el.textContent = e && e.code !== 'network' ? errorText(e) : 'Offline, retrying';
+  }
+}
+
+function startPolling() {
+  clearInterval(timer);
+  timer = setInterval(() => { if (!document.hidden) refresh(); }, POLL_MS);
+}
+
+/* ---------- Passcode gate ---------- */
+
+function askPasscode(note) {
+  clearInterval(timer);
+  pass = '';
+  store('sd.pass', null);
+  $('gateName').value = me;
+  $('gatePass').value = '';
+  $('gateNote').textContent = note || $('gateNote').textContent;
+  $('gateErr').hidden = true;
+  $('gate').hidden = false;
+  // A modal dialog would sit above the gate. It's reopened, with its contents, after the gate.
+  if (dlg.open) { held = true; dlg.close(); }
+  (me ? $('gatePass') : $('gateName')).focus();
+}
+let held = false;
+
+$('gateForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  me = $('gateName').value.trim();
+  pass = $('gatePass').value.trim();
+  if (!me || !pass) return;
+  const btn = $('gateBtn');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  $('gateErr').hidden = true;
+  try {
+    const out = await api('load');
+    store('sd.name', me);
+    store('sd.pass', pass);
+    $('gate').hidden = true;
+    apply(out.data);
+    render();
+    setSync(true);
+    startPolling();
+    if (held) { held = false; dlg.showModal(); }
+  } catch (e) {
+    $('gateErr').textContent = e.code === 'network'
+      ? "Couldn't reach the Sheet. Check your connection, the Web app URL, and that the deployment's access is set to Anyone."
+      : errorText(e);
+    $('gateErr').hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Open the Sales Desk';
+  }
+});
+
+$('whoBtn').addEventListener('click', () => {
+  if (DEMO) return;
+  const name = prompt('Your name, as saved next to your changes:', me);
+  if (name && name.trim()) { me = name.trim(); store('sd.name', me); $('whoBtn').textContent = me; }
+});
+
+/* ---------- Rendering ---------- */
+
+function render() {
+  $('brand').textContent = `${cfg().eventName || 'Winter Garden'} Sales Desk`;
+  $('whoBtn').textContent = DEMO ? '' : me;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === view)));
+  // Only the list area is redrawn, so typing in the filters isn't interrupted.
+  if (view === 'overview') renderOverview();
+  else renderList(view);
+}
+
+function pill(status) {
+  const cls = VENDOR_SOLD.concat(SPONSOR_SOLD, ['Done']).includes(status) ? 'won'
+    : ['Declined', 'Cancelled', 'No-show'].includes(status) ? 'lost' : '';
+  return status ? `<span class="pill ${cls}">${esc(status)}</span>` : '';
+}
+function followUpCell(r) {
+  if (!r.followUp) return '';
+  const late = r.followUp < today() && !CLOSED.includes(r.status);
+  return `<span class="${late ? 'late' : ''}">${esc(niceDate(r.followUp))}${late ? ' (overdue)' : ''}</span>`;
+}
+function contactLine(r) {
+  const parts = [];
+  if (r.contact) parts.push(esc(r.contact));
+  const digits = String(r.phone || '').replace(/[^0-9]/g, '');
+  if (digits) {
+    const wa = digits.length === 8 ? `968${digits}` : digits; // local Omani numbers have 8 digits
+    parts.push(`<a href="tel:+${wa}">${esc(r.phone)}</a>`, `<a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp</a>`);
+  }
+  return parts.join(' · ');
+}
+function cell(label, html, cls = '') {
+  return `<td data-label="${esc(label)}" class="${cls}${html === '' ? ' blank' : ''}">${html}</td>`;
+}
+const balance = (r, key) => Math.max(num(r[key]) - num(r.paid), 0);
+
+const LISTS = {
+  vendors: {
+    title: 'Vendors',
+    heads: ['Business', 'Booth', 'Status', 'Owner', 'Follow-up', 'Balance'],
+    row: r => cell('', `<button class="name" data-open="${esc(r.id)}">${esc(r.business)}</button><div class="sub">${contactLine(r)}</div>`, 'lead')
+      + cell('Booth', esc([r.boothType, r.boothNumber && `#${r.boothNumber}`].filter(Boolean).join(' ')))
+      + cell('Status', pill(r.status)) + cell('Owner', esc(r.owner)) + cell('Follow-up', followUpCell(r))
+      + cell('Balance', r.price === '' || r.price === undefined ? '' : esc(money(balance(r, 'price'))), 'num'),
+    text: r => [r.business, r.contact, r.phone, r.email, r.category, r.boothType, r.boothNumber, r.notes],
+  },
+  sponsors: {
+    title: 'Sponsors',
+    heads: ['Company', 'Tier', 'Status', 'Owner', 'Follow-up', 'Balance'],
+    row: r => cell('', `<button class="name" data-open="${esc(r.id)}">${esc(r.company)}</button><div class="sub">${contactLine(r)}</div>`, 'lead')
+      + cell('Tier', esc(r.tier)) + cell('Status', pill(r.status)) + cell('Owner', esc(r.owner)) + cell('Follow-up', followUpCell(r))
+      + cell('Balance', r.amount === '' || r.amount === undefined || r.tier === 'In-kind' ? '' : esc(money(balance(r, 'amount'))), 'num'),
+    text: r => [r.company, r.contact, r.phone, r.email, r.tier, r.notes],
+  },
+  appointments: {
+    title: 'Appointments',
+    heads: ['With', 'When', 'Type', 'Owner', 'Status', 'Where'],
+    row: r => cell('', `<button class="name" data-open="${esc(r.id)}">${esc(r.with)}</button><div class="sub">${esc(r.leadType)}</div>`, 'lead')
+      + cell('When', esc(`${niceDate(r.date)} ${r.time || ''}`.trim())) + cell('Type', esc(r.type)) + cell('Owner', esc(r.owner))
+      + cell('Status', pill(r.status)) + cell('Where', esc(r.location)),
+    text: r => [r.with, r.leadType, r.type, r.location, r.notes],
+  },
+};
+
+function sorted(tab, rows) {
+  if (tab === 'appointments') {
+    const stamp = r => `${r.date || '9999'} ${r.time || ''}`;
+    const t = today();
+    return rows.slice().sort((a, b) => {
+      const pa = (a.date || '9999') < t, pb = (b.date || '9999') < t;
+      if (pa !== pb) return pa ? 1 : -1;
+      return pa ? stamp(b).localeCompare(stamp(a)) : stamp(a).localeCompare(stamp(b));
+    });
+  }
+  const key = NAME_KEY[tab];
+  const rank = r => (r.status === 'Declined' ? 2 : CLOSED.includes(r.status) ? 1 : 0);
+  return rows.slice().sort((a, b) => rank(a) - rank(b)
+    || (a.followUp || '9999').localeCompare(b.followUp || '9999')
+    || String(a[key]).localeCompare(String(b[key])));
+}
+
+function visibleRows(tab) {
+  const f = filters[tab];
+  const q = f.q.trim().toLowerCase();
+  return sorted(tab, S[tab].filter(r => {
+    if (f.owner && r.owner !== f.owner) return false;
+    if (tab === 'appointments') {
+      if (f.status === 'upcoming' && !((r.date || '9999') >= today() && r.status === 'Scheduled')) return false;
+    } else if (f.status && r.status !== f.status) return false;
+    return !q || LISTS[tab].text(r).join(' ').toLowerCase().includes(q);
+  }));
+}
+
+function renderList(tab) {
+  const main = $('main');
+  if (main.dataset.view !== tab) {
+    main.dataset.view = tab;
+    const L = LISTS[tab], f = filters[tab];
+    const statuses = tab === 'vendors' ? VENDOR_STATUS : SPONSOR_STATUS;
+    const statusFilter = tab === 'appointments'
+      ? `<select aria-label="Show" data-filter="status"><option value="upcoming">Upcoming</option><option value="">All</option></select>`
+      : `<select aria-label="Status" data-filter="status"><option value="">All statuses</option>${statuses.map(s => `<option>${esc(s)}</option>`).join('')}</select>`;
+    main.innerHTML = `
+      <div class="head"><h1>${L.title}</h1>
+        <div class="actions"><button class="btn" data-csv="${tab}">Download CSV</button>
+        <button class="btn primary" data-new="${tab}">Add ${SINGULAR[tab]}</button></div></div>
+      <div class="filters"><input type="search" placeholder="Search" aria-label="Search" data-filter="q">
+        ${statusFilter}
+        <select aria-label="Owner" data-filter="owner" id="ownerFilter"></select></div>
+      <div class="count" id="count"></div>
+      <div class="panel" id="list"></div>`;
+    main.querySelector('[data-filter="q"]').value = f.q;
+    main.querySelector('[data-filter="status"]').value = f.status;
+  }
+  const owners = [...new Set(team().concat(S[tab].map(r => r.owner).filter(Boolean)))];
+  const ownerSel = $('ownerFilter');
+  ownerSel.innerHTML = `<option value="">All owners</option>${owners.map(o => `<option>${esc(o)}</option>`).join('')}`;
+  ownerSel.value = filters[tab].owner;
+  drawRows(tab);
+}
+
+function drawRows(tab) {
+  const L = LISTS[tab];
+  const rows = visibleRows(tab);
+  $('count').textContent = `Showing ${rows.length} of ${S[tab].length}`;
+  $('list').innerHTML = rows.length
+    ? `<table><thead><tr>${L.heads.map((h, i) => `<th class="${tab !== 'appointments' && i === 5 ? 'num' : ''}">${h}</th>`).join('')}</tr></thead>
+       <tbody>${rows.map(r => `<tr data-open="${esc(r.id)}">${L.row(r)}</tr>`).join('')}</tbody></table>`
+    : `<div class="empty">${S[tab].length ? 'Nothing matches these filters.' : `No ${tab} yet. Add the first one.`}</div>`;
+}
+
+function summary() {
+  const v = S.vendors, s = S.sponsors;
+  const soldV = v.filter(r => VENDOR_SOLD.includes(r.status));
+  const soldS = s.filter(r => SPONSOR_SOLD.includes(r.status));
+  const cash = soldS.filter(r => r.tier !== 'In-kind');
+  const sum = (rows, k) => rows.reduce((t, r) => t + num(r[k]), 0);
+  const booths = (cfg().boothTypes || []).map(b => ({ ...b, sold: soldV.filter(r => r.boothType === b.name).length }));
+  const committed = sum(soldV, 'price') + sum(cash, 'amount');
+  const collected = sum(soldV, 'paid') + sum(cash, 'paid');
+  return {
+    booths, committed, collected,
+    outstanding: soldV.reduce((t, r) => t + balance(r, 'price'), 0) + cash.reduce((t, r) => t + balance(r, 'amount'), 0),
+    inKind: sum(soldS.filter(r => r.tier === 'In-kind'), 'amount'),
+    vendorRevenue: sum(soldV, 'price'), sponsorRevenue: sum(cash, 'amount'),
+    soldBooths: soldV.length, capacity: booths.reduce((t, b) => t + num(b.count), 0),
+    sponsorsConfirmed: soldS.length,
+  };
+}
+
+function followUps() {
+  const t = today();
+  const pick = (tab, rows) => rows.filter(r => r.followUp && r.followUp <= t && !CLOSED.includes(r.status)).map(r => ({ tab, r, name: r[NAME_KEY[tab]] }));
+  return pick('vendors', S.vendors).concat(pick('sponsors', S.sponsors)).sort((a, b) => a.r.followUp.localeCompare(b.r.followUp));
+}
+
+function renderOverview() {
+  const main = $('main');
+  main.dataset.view = 'overview';
+  const m = summary();
+  const due = followUps();
+  const t = today();
+  const appts = sorted('appointments', S.appointments.filter(a => a.status === 'Scheduled' && (a.date || '') >= t)).slice(0, 6);
+  const unpriced = (cfg().boothTypes || []).filter(b => !num(b.price)).map(b => b.name);
+  const stage = (rows, list) => list.map(st => `<div class="line"><span>${esc(st)}</span><b>${rows.filter(r => r.status === st).length}</b></div>`).join('');
+  main.innerHTML = `
+    <div class="head"><h1>Overview</h1>
+      <div class="actions"><button class="btn" data-csv="overview">Download CSV</button>
+      <button class="btn primary" data-settings>Prices and settings</button></div></div>
+    ${unpriced.length ? `<div class="warn">No price set for: ${esc(unpriced.join(', '))}. Add it under Prices and settings.</div>` : ''}
+    <div class="stats">
+      <div class="panel stat"><div class="label">Committed</div><div class="value">${esc(money(m.committed))}</div><div class="note">Booths ${esc(money(m.vendorRevenue))}, sponsors ${esc(money(m.sponsorRevenue))}</div></div>
+      <div class="panel stat"><div class="label">Collected</div><div class="value">${esc(money(m.collected))}</div><div class="note">${esc(money(m.outstanding))} still to collect</div></div>
+      <div class="panel stat"><div class="label">Booths sold</div><div class="value">${m.soldBooths}${m.capacity ? ` of ${m.capacity}` : ''}</div><div class="note">Reserved or paid</div></div>
+      <div class="panel stat"><div class="label">Sponsors confirmed</div><div class="value">${m.sponsorsConfirmed}</div><div class="note">${m.inKind ? `Plus ${esc(money(m.inKind))} in-kind` : `of ${S.sponsors.length} on the list`}</div></div>
+    </div>
+    <div class="cols">
+      <section class="panel block"><h2>Follow-ups due (${due.length})</h2>
+        ${due.slice(0, 8).map(d => `<button class="line" data-jump="${d.tab}" data-id="${esc(d.r.id)}"><span>${esc(d.name)}<span class="sub"><br>${esc(d.r.owner || 'No owner')}</span></span><b class="${d.r.followUp < t ? 'late' : ''}">${esc(niceDate(d.r.followUp))}</b></button>`).join('') || '<div class="empty">Nothing due today.</div>'}
+      </section>
+      <section class="panel block"><h2>Next appointments</h2>
+        ${appts.map(a => `<button class="line" data-jump="appointments" data-id="${esc(a.id)}"><span>${esc(a.with)}<span class="sub"><br>${esc([a.type, a.owner].filter(Boolean).join(' · '))}</span></span><b>${esc(`${niceDate(a.date)} ${a.time || ''}`.trim())}</b></button>`).join('') || '<div class="empty">Nothing booked.</div>'}
+      </section>
+      <section class="panel block"><h2>Booths</h2>
+        ${m.booths.map(b => `<div class="line"><span>${esc(b.name)}</span><b>${b.sold}${num(b.count) ? ` of ${esc(b.count)}` : ''}</b></div>`).join('') || '<div class="empty">No booth types set.</div>'}
+      </section>
+      <section class="panel block"><h2>Vendor pipeline</h2>${stage(S.vendors, VENDOR_STATUS)}</section>
+      <section class="panel block"><h2>Sponsor pipeline</h2>${stage(S.sponsors, SPONSOR_STATUS)}</section>
+    </div>`;
+}
+
+/* ---------- Add and edit forms ---------- */
+
+const dlg = $('dlg');
+
+function earlyBirdActive() {
+  const c = cfg();
+  return !!c.earlyBirdOn && num(c.earlyBirdDiscount) > 0 && (!c.earlyBirdDeadline || today() <= c.earlyBirdDeadline);
+}
+function boothPrice(type, early) {
+  const b = (cfg().boothTypes || []).find(x => x.name === type);
+  if (!b) return '';
+  const price = num(b.price) * (early ? 1 - num(cfg().earlyBirdDiscount) / 100 : 1);
+  return Math.round(price * 1000) / 1000;
+}
+
+function optionsFor(list, value, blank) {
+  const all = list.slice();
+  if (value && !all.includes(value)) all.push(value); // keeps an old value after a rename
+  return `${blank === undefined ? '' : `<option value="">${esc(blank)}</option>`}${all.map(o => `<option${o === value ? ' selected' : ''}>${esc(o)}</option>`).join('')}`;
+}
+const text = (k, label, r, attrs = '', cls = '') => `<div class="field ${cls}"><label for="f-${k}">${label}</label><input id="f-${k}" name="${k}" value="${esc(r[k])}" ${attrs}></div>`;
+const select = (k, label, opts, cls = '') => `<div class="field ${cls}"><label for="f-${k}">${label}</label><select id="f-${k}" name="${k}">${opts}</select></div>`;
+const area = (k, label, r) => `<div class="field wide"><label for="f-${k}">${label}</label><textarea id="f-${k}" name="${k}">${esc(r[k])}</textarea></div>`;
+const amount = 'type="number" min="0" step="0.001" inputmode="decimal"';
+
+const FORMS = {
+  vendors: r => text('business', 'Business name', r, 'required maxlength="200"', 'wide')
+    + text('contact', 'Contact person', r) + text('phone', 'Phone', r, 'type="tel"')
+    + text('email', 'Email', r, 'type="email"') + select('category', 'Category', optionsFor(CATEGORIES, r.category, 'Choose'))
+    + select('boothType', 'Booth type', optionsFor((cfg().boothTypes || []).map(b => b.name), r.boothType, 'Choose'))
+    + text('boothNumber', 'Booth number', r)
+    + select('status', 'Status', optionsFor(VENDOR_STATUS, r.status || 'Lead'))
+    + select('owner', 'Owner', optionsFor(team(), r.owner, 'Unassigned'))
+    + text('price', `Agreed price (${esc(cfg().currency || 'OMR')})`, r, amount) + text('paid', `Paid so far (${esc(cfg().currency || 'OMR')})`, r, amount)
+    + `<div class="field wide check"><input type="checkbox" id="f-earlyBird" name="earlyBird" ${r.earlyBird ? 'checked' : ''}><label for="f-earlyBird">Early-bird price${num(cfg().earlyBirdDiscount) ? ` (${esc(cfg().earlyBirdDiscount)}% off)` : ''}</label></div>`
+    + `<p class="hint wide field" id="depositHint"></p>`
+    + text('followUp', 'Follow up on', r, 'type="date"') + `<div></div>` + area('notes', 'Notes', r),
+  sponsors: r => text('company', 'Company', r, 'required maxlength="200"', 'wide')
+    + text('contact', 'Contact person', r) + text('phone', 'Phone', r, 'type="tel"')
+    + text('email', 'Email', r, 'type="email"') + select('tier', 'Tier', optionsFor((cfg().sponsorTiers || []).map(t => t.name), r.tier, 'Not decided'))
+    + select('status', 'Status', optionsFor(SPONSOR_STATUS, r.status || 'Prospect'))
+    + select('owner', 'Owner', optionsFor(team(), r.owner, 'Unassigned'))
+    + text('amount', `Agreed amount (${esc(cfg().currency || 'OMR')})`, r, amount) + text('paid', `Paid so far (${esc(cfg().currency || 'OMR')})`, r, amount)
+    + text('followUp', 'Follow up on', r, 'type="date"') + `<div></div>` + area('notes', 'Notes', r),
+  appointments: r => text('with', 'With', r, 'required maxlength="200" list="leadNames" autocomplete="off"', 'wide')
+    + `<datalist id="leadNames">${S.vendors.map(v => v.business).concat(S.sponsors.map(s => s.company)).map(n => `<option value="${esc(n)}">`).join('')}</datalist>`
+    + select('leadType', 'For', optionsFor(['Vendor', 'Sponsor', 'Other'], r.leadType || 'Vendor'))
+    + select('type', 'Type', optionsFor(['Call', 'Meeting', 'Site visit', 'Online'], r.type || 'Meeting'))
+    + text('date', 'Date', r, 'type="date" required') + text('time', 'Time', r, 'type="time"')
+    + text('location', 'Where', r) + select('owner', 'Owner', optionsFor(team(), r.owner, 'Unassigned'))
+    + select('status', 'Status', optionsFor(APPT_STATUS, r.status || 'Scheduled')) + `<div></div>` + area('notes', 'Notes', r),
+};
+
+function openForm(tab, record) {
+  const isNew = !record || !record.id;
+  const r = { ...(record || {}) };
+  if (isNew && tab !== 'appointments' && r.owner === undefined && team().includes(me)) r.owner = me;
+  if (isNew && tab === 'vendors' && earlyBirdActive()) r.earlyBird = 'yes';
+  if (isNew && tab === 'appointments') { r.date = r.date || today(); if (r.owner === undefined && team().includes(me)) r.owner = me; }
+  const title = isNew ? `Add ${SINGULAR[tab]}` : r[NAME_KEY[tab]];
+  const stampLine = r.updatedAt ? `<p class="audit">Last changed ${esc(r.updatedAt)} by ${esc(r.updatedBy)}. Added ${esc(r.createdAt)} by ${esc(r.createdBy)}.</p>` : '';
+  dlg.innerHTML = `<form id="recForm" novalidate>
+    <div class="dlg-head"><h2>${esc(title)}</h2><button type="button" class="x" data-close aria-label="Close">×</button></div>
+    <div class="dlg-body">${FORMS[tab](r)}${stampLine}</div>
+    <div class="dlg-foot"><p class="err" id="formErr" role="alert" hidden></p>
+      ${isNew ? '' : '<button type="button" class="btn danger" id="delBtn">Delete</button>'}
+      ${!isNew && tab !== 'appointments' ? '<button type="button" class="btn" id="bookBtn">Book appointment</button>' : ''}
+      <span class="spacer"></span>
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="saveBtn">Save</button></div></form>`;
+  const form = $('recForm');
+  const field = n => form.elements[n];
+  const deposit = () => {
+    const hint = $('depositHint');
+    if (!hint) return;
+    const p = num(field('price').value), pct = num(cfg().depositPct);
+    hint.textContent = p && pct ? `${pct}% deposit: ${money(p * pct / 100)}` : '';
+  };
+  if (tab === 'vendors') {
+    const priceIt = () => {
+      const p = boothPrice(field('boothType').value, field('earlyBird').checked);
+      if (p !== '') field('price').value = p;
+      deposit();
+    };
+    field('boothType').addEventListener('change', priceIt);
+    field('earlyBird').addEventListener('change', priceIt);
+    field('price').addEventListener('input', deposit);
+    deposit();
+  }
+  if (tab === 'sponsors') {
+    field('tier').addEventListener('change', () => {
+      const t = (cfg().sponsorTiers || []).find(x => x.name === field('tier').value);
+      if (t && num(t.price)) field('amount').value = t.price;
+    });
+  }
+  form.addEventListener('submit', ev => { ev.preventDefault(); saveForm(tab, r, form); });
+  const del = $('delBtn');
+  if (del) del.addEventListener('click', () => removeRecord(tab, r));
+  const book = $('bookBtn');
+  if (book) book.addEventListener('click', () => openForm('appointments', { with: r[NAME_KEY[tab]], leadType: tab === 'vendors' ? 'Vendor' : 'Sponsor', owner: r.owner }));
+  if (!dlg.open) dlg.showModal();
+}
+
+function formError(msg) {
+  const el = $('formErr');
+  el.textContent = msg;
+  el.hidden = !msg;
+}
+
+async function saveForm(tab, original, form) {
+  if (!form.reportValidity()) return;
+  const record = { id: original.id || newId() };
+  for (const col of COLUMNS[tab]) {
+    const el = form.elements[col];
+    if (!el || col === 'id') continue;
+    record[col] = el.type === 'checkbox' ? (el.checked ? 'yes' : '') : el.value.trim();
+  }
+  const btn = $('saveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  formError('');
+  try {
+    const out = await guarded(() => api('save', { tab, record }));
+    if (!out) return; // the passcode screen took over; the form comes back after it
+    writes++;
+    const i = S[tab].findIndex(x => x.id === out.record.id);
+    if (i === -1) S[tab].push(out.record); else S[tab][i] = out.record;
+    dlg.close();
+    render();
+    refresh();
+  } catch (e) {
+    formError(`Not saved. ${errorText(e)}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+}
+
+// Keeps a half-filled form safe if the passcode changed while it was open.
+async function guarded(call) {
+  try {
+    return await call();
+  } catch (e) {
+    if (e.code !== 'passcode') throw e;
+    askPasscode('The passcode has changed. Enter the new one, then press Save again.');
+    return null;
+  }
+}
+
+async function removeRecord(tab, r) {
+  if (!confirm(`Delete ${r[NAME_KEY[tab]]}? This also removes the row from the Sheet.`)) return;
+  const btn = $('delBtn');
+  btn.disabled = true;
+  formError('');
+  try {
+    const out = await guarded(() => api('delete', { tab, id: r.id }));
+    if (!out) return;
+    writes++;
+    S[tab] = S[tab].filter(x => x.id !== r.id);
+    dlg.close();
+    render();
+    refresh();
+  } catch (e) {
+    formError(`Not deleted. ${errorText(e)}`);
+    btn.disabled = false;
+  }
+}
+
+/* ---------- Prices and settings ---------- */
+
+function boothRow(b = {}) {
+  return `<div class="price-row" data-booth><input aria-label="Booth type" value="${esc(b.name)}" placeholder="Booth type"><input aria-label="Price" type="number" min="0" step="0.001" value="${esc(b.price ?? '')}"><input aria-label="Number of booths" type="number" min="0" step="1" value="${esc(b.count ?? '')}"><button type="button" class="x" data-drop aria-label="Remove">×</button></div>`;
+}
+function tierRow(t = {}) {
+  return `<div class="price-row tier" data-tier><input aria-label="Tier" value="${esc(t.name)}" placeholder="Tier"><input aria-label="Price" type="number" min="0" step="0.001" value="${esc(t.price ?? '')}"><button type="button" class="x" data-drop aria-label="Remove">×</button></div>`;
+}
+
+function openSettings() {
+  const c = cfg();
+  dlg.innerHTML = `<form id="setForm">
+    <div class="dlg-head"><h2>Prices and settings</h2><button type="button" class="x" data-close aria-label="Close">×</button></div>
+    <div class="dlg-body">
+      <div class="field wide"><label for="s-event">Event name</label><input id="s-event" required value="${esc(c.eventName)}"></div>
+      <div class="field wide"><label for="s-team">Team names</label><input id="s-team" value="${esc(team().join(', '))}"><span class="hint">Separate names with commas.</span></div>
+      <div class="field wide"><span class="lbl">Booth types</span>
+        <div class="price-row price-cols"><span>Name</span><span>Price (${esc(c.currency || 'OMR')})</span><span>How many</span><span></span></div>
+        <div id="boothRows">${(c.boothTypes || []).map(boothRow).join('')}</div>
+        <div><button type="button" class="btn" id="addBooth">Add booth type</button></div></div>
+      <div class="field wide"><span class="lbl">Sponsor tiers</span>
+        <div id="tierRows">${(c.sponsorTiers || []).map(tierRow).join('')}</div>
+        <div><button type="button" class="btn" id="addTier">Add tier</button></div></div>
+      <div class="field"><label for="s-deposit">Deposit (%)</label><input id="s-deposit" type="number" min="0" max="100" value="${esc(c.depositPct)}"></div>
+      <div></div>
+      <div class="field wide check"><input type="checkbox" id="s-eb" ${c.earlyBirdOn ? 'checked' : ''}><label for="s-eb">Early-bird pricing is on</label></div>
+      <div class="field"><label for="s-ebd">Early-bird discount (%)</label><input id="s-ebd" type="number" min="0" max="100" value="${esc(c.earlyBirdDiscount)}"></div>
+      <div class="field"><label for="s-ebe">Early-bird ends</label><input id="s-ebe" type="date" value="${esc(c.earlyBirdDeadline)}"></div>
+      <p class="hint field wide">Changing a price here doesn't touch prices already agreed with vendors and sponsors.</p>
+    </div>
+    <div class="dlg-foot"><p class="err" id="formErr" role="alert" hidden></p><span class="spacer"></span>
+      <button type="button" class="btn" data-close>Cancel</button><button class="btn primary" id="saveBtn">Save</button></div></form>`;
+  $('addBooth').addEventListener('click', () => $('boothRows').insertAdjacentHTML('beforeend', boothRow()));
+  $('addTier').addEventListener('click', () => $('tierRows').insertAdjacentHTML('beforeend', tierRow()));
+  $('setForm').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const inputs = el => [...el.querySelectorAll('input')].map(i => i.value.trim());
+    const config = {
+      eventName: $('s-event').value.trim(),
+      team: $('s-team').value.split(',').map(s => s.trim()).filter(Boolean),
+      boothTypes: [...dlg.querySelectorAll('[data-booth]')].map(inputs).filter(v => v[0]).map(v => ({ name: v[0], price: num(v[1]), count: num(v[2]) })),
+      sponsorTiers: [...dlg.querySelectorAll('[data-tier]')].map(inputs).filter(v => v[0]).map(v => ({ name: v[0], price: num(v[1]) })),
+      depositPct: num($('s-deposit').value),
+      earlyBirdOn: $('s-eb').checked,
+      earlyBirdDiscount: num($('s-ebd').value),
+      earlyBirdDeadline: $('s-ebe').value,
+    };
+    const btn = $('saveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    formError('');
+    try {
+      const out = await guarded(() => api('saveConfig', { config }));
+      if (!out) return;
+      writes++;
+      S.config = out.config;
+      dlg.close();
+      render();
+      refresh();
+    } catch (e) {
+      formError(`Not saved. ${errorText(e)}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  });
+  dlg.showModal();
+}
+
+/* ---------- CSV ---------- */
+
+function csvCell(v) {
+  let s = String(v ?? '');
+  // Stops spreadsheet apps running a cell as a formula; phone numbers are left as they are.
+  if (/^[=+\-@\t\r]/.test(s) && !/^\+?[0-9 ()-]+$/.test(s)) s = `'${s}`;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function download(name, rows) {
+  const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportCsv(tab) {
+  const stamp = today();
+  if (tab === 'overview') {
+    const m = summary();
+    const cur = cfg().currency || 'OMR';
+    download(`winter-garden-overview-${stamp}.csv`, [['Measure', 'Value'],
+      [`Committed (${cur})`, m.committed], [`Collected (${cur})`, m.collected], [`To collect (${cur})`, m.outstanding],
+      [`Booth revenue (${cur})`, m.vendorRevenue], [`Sponsor revenue (${cur})`, m.sponsorRevenue], [`In-kind value (${cur})`, m.inKind],
+      ['Booths sold', m.soldBooths], ['Booths available', m.capacity], ['Sponsors confirmed', m.sponsorsConfirmed],
+      ...m.booths.map(b => [`Sold: ${b.name}`, b.sold])]);
+    return;
+  }
+  const cols = COLUMNS[tab];
+  download(`winter-garden-${tab}-${stamp}.csv`, [cols, ...sorted(tab, S[tab]).map(r => cols.map(c => r[c]))]);
+}
+
+/* ---------- Events ---------- */
+
+document.addEventListener('click', ev => {
+  const t = ev.target;
+  const tabBtn = t.closest('.tab');
+  if (tabBtn) { show(tabBtn.dataset.view); return; }
+  if (t.closest('[data-close]')) { dlg.close(); return; }
+  const drop = t.closest('[data-drop]');
+  if (drop) { drop.parentElement.remove(); return; }
+  const add = t.closest('[data-new]');
+  if (add) { openForm(add.dataset.new); return; }
+  const csv = t.closest('[data-csv]');
+  if (csv) { exportCsv(csv.dataset.csv); return; }
+  if (t.closest('[data-settings]')) { openSettings(); return; }
+  const jump = t.closest('[data-jump]');
+  if (jump) {
+    const r = S[jump.dataset.jump].find(x => x.id === jump.dataset.id);
+    if (r) openForm(jump.dataset.jump, r);
+    return;
+  }
+  if (t.closest('a')) return;
+  const row = t.closest('[data-open]');
+  if (row && view !== 'overview') {
+    const r = S[view].find(x => x.id === row.dataset.open);
+    if (r) openForm(view, r);
+  }
+});
+
+$('main').addEventListener('input', ev => {
+  const key = ev.target.dataset.filter;
+  if (!key || view === 'overview') return;
+  filters[view][key] = ev.target.value;
+  drawRows(view);
+});
+
+function show(next) {
+  view = next;
+  $('main').dataset.view = '';
+  render();
+  store('sd.view', next);
+}
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden && started) refresh(); });
+
+/* ---------- Demo data (only used when API_URL is empty) ---------- */
+
+function demoData() {
+  const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+  const a = { createdAt: `${d(-3)} 10:15`, createdBy: 'Kristine', updatedAt: `${d(-1)} 16:40`, updatedBy: 'Jaf' };
+  return {
+    config: {
+      eventName: 'Winter Garden 2026', currency: 'OMR', team: ['Ivan', 'Kristine', 'Jaf'],
+      boothTypes: [{ name: 'Standard 3×3 m', price: 50, count: 19 }, { name: 'Small 2×2 m', price: 25, count: 28 }, { name: 'Food stall', price: 0, count: 0 }],
+      sponsorTiers: [{ name: 'Platinum', price: 500 }, { name: 'Gold', price: 250 }, { name: 'Silver', price: 100 }, { name: 'In-kind', price: 0 }],
+      depositPct: 50, earlyBirdOn: false, earlyBirdDeadline: '', earlyBirdDiscount: 0,
+    },
+    vendors: [
+      { id: 'demo-v1', business: 'Sample Bakery', contact: 'Test Contact', phone: '+968 9000 0001', email: 'bakery@example.com', category: 'Food & drink', boothType: 'Standard 3×3 m', boothNumber: '12', status: 'Deposit paid', owner: 'Kristine', price: 50, earlyBird: '', paid: 25, followUp: d(0), notes: 'Sample record.', ...a },
+      { id: 'demo-v2', business: 'Sample Crafts', contact: 'Test Contact', phone: '90000002', email: '', category: 'Crafts & art', boothType: 'Small 2×2 m', boothNumber: '', status: 'Interested', owner: 'Jaf', price: 25, earlyBird: '', paid: '', followUp: d(-2), notes: '', ...a },
+      { id: 'demo-v3', business: 'Sample Boutique', contact: '', phone: '', email: '', category: 'Fashion', boothType: '', boothNumber: '', status: 'Lead', owner: '', price: '', earlyBird: '', paid: '', followUp: '', notes: '', ...a },
+    ],
+    sponsors: [
+      { id: 'demo-s1', company: 'Sample Bank', contact: 'Test Contact', phone: '', email: '', tier: 'Gold', status: 'Confirmed', owner: 'Ivan', amount: 250, paid: 100, followUp: d(2), notes: 'Sample record.', ...a },
+      { id: 'demo-s2', company: 'Sample Telecom', contact: '', phone: '', email: '', tier: 'Platinum', status: 'Proposal sent', owner: 'Kristine', amount: 500, paid: '', followUp: d(0), notes: '', ...a },
+    ],
+    appointments: [
+      { id: 'demo-a1', date: d(1), time: '11:00', with: 'Sample Telecom', leadType: 'Sponsor', type: 'Meeting', location: 'Their office', owner: 'Kristine', status: 'Scheduled', notes: '', ...a },
+    ],
+  };
+}
+let demoDb = null;
+async function demoApi(action, p) {
+  if (!demoDb) demoDb = demoData();
+  await new Promise(r => setTimeout(r, 120));
+  const stamp = `${today()} ${new Date().toTimeString().slice(0, 5)}`;
+  const copy = x => JSON.parse(JSON.stringify(x));
+  if (action === 'load') return { ok: true, data: copy(demoDb) };
+  if (action === 'save') {
+    const rows = demoDb[p.tab];
+    const old = rows.find(r => r.id === p.record.id);
+    const next = { createdAt: stamp, createdBy: 'Demo', ...old, ...p.record, updatedAt: stamp, updatedBy: 'Demo' };
+    if (old) rows[rows.indexOf(old)] = next; else rows.push(next);
+    return { ok: true, record: copy(next) };
+  }
+  if (action === 'delete') { demoDb[p.tab] = demoDb[p.tab].filter(r => r.id !== p.id); return { ok: true }; }
+  if (action === 'saveConfig') { Object.assign(demoDb.config, p.config); return { ok: true, config: copy(demoDb.config) }; }
+  throw new ApiError('server', 'Unknown action.');
+}
+
+/* ---------- Start ---------- */
+
+async function start() {
+  const saved = store('sd.view');
+  if (saved && ['overview', 'vendors', 'sponsors', 'appointments'].includes(saved)) view = saved;
+  $('demo').hidden = !DEMO;
+  if (DEMO) me = 'Demo';
+  started = true;
+  render();
+  if (!DEMO && (!pass || !me)) { askPasscode(); return; }
+  await refresh();
+  if ($('gate').hidden) startPolling();
+}
+start();
+</script>
+</body>
+</html>
